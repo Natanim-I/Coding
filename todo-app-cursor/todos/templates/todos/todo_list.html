@@ -1,0 +1,222 @@
+{% extends 'todos/base.html' %}
+
+{% block title %}Todo List{% endblock %}
+
+{% block extra_css %}
+<style>
+    .todo-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .filters {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .filter-btn {
+        padding: 8px 16px;
+        border: 2px solid #e5e7eb;
+        background: white;
+        color: #6b7280;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    .filter-btn:hover {
+        border-color: #667eea;
+        color: #667eea;
+    }
+
+    .filter-btn.active {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+
+    .todo-item {
+        background: #f9fafb;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        border-left: 4px solid #667eea;
+        transition: all 0.3s ease;
+    }
+
+    .todo-item:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .todo-item.resolved {
+        opacity: 0.7;
+        border-left-color: #10b981;
+        background: #f0fdf4;
+    }
+
+    .todo-item.overdue {
+        border-left-color: #ef4444;
+        background: #fef2f2;
+    }
+
+    .todo-header-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 10px;
+    }
+
+    .todo-title {
+        font-size: 1.3em;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 5px;
+    }
+
+    .todo-item.resolved .todo-title {
+        text-decoration: line-through;
+        color: #6b7280;
+    }
+
+    .todo-description {
+        color: #6b7280;
+        margin-bottom: 15px;
+        line-height: 1.6;
+    }
+
+    .todo-meta {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-bottom: 15px;
+        font-size: 14px;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: #6b7280;
+    }
+
+    .meta-item strong {
+        color: #374151;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .badge-resolved {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .badge-pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .badge-overdue {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .todo-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6b7280;
+    }
+
+    .empty-state-icon {
+        font-size: 4em;
+        margin-bottom: 20px;
+    }
+
+    .empty-state h3 {
+        color: #374151;
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="todo-header">
+    <a href="{% url 'todo_create' %}" class="btn btn-primary">+ Create New Todo</a>
+    
+    <div class="filters">
+        <a href="?filter=all" class="filter-btn {% if filter_status == 'all' %}active{% endif %}">All</a>
+        <a href="?filter=active" class="filter-btn {% if filter_status == 'active' %}active{% endif %}">Active</a>
+        <a href="?filter=completed" class="filter-btn {% if filter_status == 'completed' %}active{% endif %}">Completed</a>
+        <a href="?filter=overdue" class="filter-btn {% if filter_status == 'overdue' %}active{% endif %}">Overdue</a>
+    </div>
+</div>
+
+{% if todos %}
+    {% for todo in todos %}
+        <div class="todo-item {% if todo.is_resolved %}resolved{% elif todo.is_overdue %}overdue{% endif %}">
+            <div class="todo-header-item">
+                <div style="flex: 1;">
+                    <div class="todo-title">{{ todo.title }}</div>
+                    {% if todo.description %}
+                        <div class="todo-description">{{ todo.description }}</div>
+                    {% endif %}
+                </div>
+                <div>
+                    {% if todo.is_resolved %}
+                        <span class="badge badge-resolved">✓ Resolved</span>
+                    {% elif todo.is_overdue %}
+                        <span class="badge badge-overdue">⚠ Overdue</span>
+                    {% else %}
+                        <span class="badge badge-pending">Pending</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="todo-meta">
+                {% if todo.due_date %}
+                    <div class="meta-item">
+                        <strong>Due:</strong> {{ todo.due_date|date:"M d, Y g:i A" }}
+                    </div>
+                {% endif %}
+                <div class="meta-item">
+                    <strong>Created:</strong> {{ todo.created_at|date:"M d, Y" }}
+                </div>
+            </div>
+            
+            <div class="todo-actions">
+                <a href="{% url 'todo_toggle_resolved' todo.pk %}" class="btn btn-sm {% if todo.is_resolved %}btn-secondary{% else %}btn-success{% endif %}">
+                    {% if todo.is_resolved %}Reopen{% else %}Mark Resolved{% endif %}
+                </a>
+                <a href="{% url 'todo_edit' todo.pk %}" class="btn btn-sm btn-secondary">Edit</a>
+                <a href="{% url 'todo_delete' todo.pk %}" class="btn btn-sm btn-danger">Delete</a>
+            </div>
+        </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <h3>No todos found</h3>
+        <p>Get started by creating your first todo!</p>
+        <a href="{% url 'todo_create' %}" class="btn btn-primary" style="margin-top: 20px;">Create Todo</a>
+    </div>
+{% endif %}
+{% endblock %}
+
